@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en" class="scheme-dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dagupan Ecotourism WebGIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      --color-ink: #d4d4d4;
+      --color-mist: #1e1e1e;
+      --color-panel: #1e1e1e;
+      --color-surface: #252526;
+      --color-hover: #2d2d30;
+      --color-line: #3e3e42;
+      --color-mangrove: #007acc;
+      --color-accent-light: #3794ff;
+      --color-silt: #d9a441;
+      --color-danger: #f14c4c;
+      --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+      --font-body: "Inter", system-ui, sans-serif;
+    }
+  </style>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="min-h-dvh lg:h-dvh flex flex-col bg-mist text-ink font-body text-[13px] antialiased selection:bg-mangrove selection:text-white">
+
+  <!-- Header -->
+  <header class="relative z-20 flex flex-wrap items-center gap-x-6 gap-y-3 bg-panel px-6 pt-4 pb-3">
+    <div class="mr-auto">
+      <h1 class="font-display text-xl font-bold tracking-tight text-white">Dagupan City Ecotourism WebGIS</h1>
+      <p class="mt-0.5 text-xs text-ink/50">Explore tourism spots, potential sites, suitability, and accessibility</p>
+    </div>
+
+    <div id="searchBox" class="relative w-full sm:w-72">
+      <label for="search" class="sr-only">Search places</label>
+      <svg class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input id="search" type="search" autocomplete="off" placeholder="Search places..." class="w-full rounded-lg bg-surface py-2 pl-9 pr-3 text-sm text-ink ring-1 ring-line transition placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-mangrove">
+      <ul id="searchResults" class="absolute left-0 right-0 top-full z-30 mt-2 hidden max-h-72 divide-y divide-line/60 overflow-y-auto rounded-xl border border-line bg-panel shadow-2xl"></ul>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="importBtn" class="cursor-pointer rounded-lg px-3.5 py-2 text-sm font-medium text-ink/80 transition-colors hover:bg-surface hover:text-white">Import data</button>
+      <button id="addBtn" class="flex cursor-pointer items-center gap-1.5 rounded-lg bg-mangrove px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-mangrove/25 transition-all duration-150 hover:-translate-y-px hover:bg-accent-light hover:shadow-xl hover:shadow-mangrove/30 active:translate-y-0 active:scale-[0.98] active:shadow-md">
+        <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/></svg>
+        Add spot
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Views -->
+  <nav id="nav" class="flex gap-6 overflow-x-auto bg-panel px-6 shadow-[inset_0_-1px_0_var(--color-line)]" aria-label="Map views"></nav>
+
+  <!-- Mockup notice -->
+  <div class="flex items-center gap-2 bg-silt/10 px-6 py-1.5 text-xs text-silt">
+    <span class="size-1.5 shrink-0 rounded-full bg-silt"></span>
+    Mockup with simulated GIS data. Scores and weights are illustrative only.
+  </div>
+
+  <!-- Main Grid Workspace -->
+  <main class="flex flex-1 lg:min-h-0 flex-col lg:flex-row overflow-hidden">
+
+    <!-- Left Controls Panel -->
+    <aside class="space-y-6 border-b border-line bg-panel p-5 lg:w-80 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r [scrollbar-gutter:stable]">
+
+      <!-- Layers (always visible, fixed height, so nothing below jumps) -->
+      <section>
+        <h2 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink/50">Map layers</h2>
+        <div id="layerBoxes"></div>
+      </section>
+
+      <!-- About this view -->
+      <section class="space-y-3">
+        <p id="viewText" class="rounded-xl bg-surface p-3.5 text-xs leading-relaxed text-ink/70"></p>
+        <div id="factorBox" class="hidden">
+          <label for="factorSelect" class="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-ink/50">Show by</label>
+          <select id="factorSelect" class="w-full cursor-pointer rounded-lg bg-surface px-3 py-2 text-xs text-ink ring-1 ring-line focus:outline-none focus:ring-2 focus:ring-mangrove"></select>
+        </div>
+      </section>
+
+      <!-- Spot type filter (hidden when tourism spots are off) -->
+      <section id="typeSection">
+        <h2 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink/50">Spot types</h2>
+        <div id="typeBoxes" class="flex flex-wrap gap-1.5"></div>
+      </section>
+
+      <!-- Statistics -->
+      <section>
+        <h2 id="summaryTitle" class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink/50"></h2>
+        <table class="w-full text-xs text-ink"><tbody id="stats" class="divide-y divide-line/40"></tbody></table>
+      </section>
+
+    </aside>
+
+    <!-- Map Canvas Viewport -->
+    <div class="relative lg:flex-1 bg-[#1e1e1e] overflow-hidden flex flex-col justify-center items-center" id="mapBox">
+      <svg id="map" viewBox="0 0 800 600" class="w-full h-full max-h-[70vh] lg:max-h-none cursor-grab select-none" role="img" aria-label="Simulated map of a coastal city">
+        <defs><clipPath id="landClip"><polygon id="landClipShape"/></clipPath></defs>
+        <text x="400" y="60" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.5" fill="#4fa3d9" opacity="0.6">DAGUPAN CITY (SIMULATED)</text>
+        <polygon id="land" fill="#252526" stroke="#6e6e6e" stroke-width="2" stroke-dasharray="6 4"/>
+
+        <g id="layer-suitability" clip-path="url(#landClip)"></g>
+        <g id="layer-constraints"></g>
+
+        <g fill="none" stroke="#2e6f9c" stroke-width="10" stroke-linecap="round" opacity="0.8">
+          <path d="M180 135 C 215 280, 150 400, 230 530"/>
+          <path d="M540 135 C 470 250, 570 350, 520 545"/>
+          <path d="M215 300 C 300 320, 420 300, 520 330" stroke-width="6"/>
+        </g>
+
+        <g id="layer-roads" fill="none" stroke="#6a6a6a" stroke-width="3"></g>
+
+        <g id="layer-barangays" fill="none" stroke="#d4d4d4" stroke-width="1" stroke-dasharray="2 4" opacity="0.6">
+          <path d="M80 300 L 720 300"/><path d="M280 120 L 280 545"/><path d="M500 120 L 500 555"/>
+          <g fill="#d4d4d4" stroke="none" font-size="11" font-weight="500" text-anchor="middle" opacity="0.85">
+            <text x="180" y="215">Brgy. Northshore</text><text x="390" y="215">Brgy. Estuary</text><text x="610" y="215">Brgy. Sandbar</text>
+            <text x="180" y="500">Brgy. Fishpond</text><text x="390" y="500">Brgy. Poblacion</text><text x="610" y="500">Brgy. Riverside</text>
+          </g>
+        </g>
+
+        <g id="layer-access"></g>
+        <g id="rings"></g>
+        <g id="layer-attractions"></g>
+        <g id="layer-candidates"></g>
+
+        <g transform="translate(40 570)">
+          <rect width="60" height="4" rx="2" fill="#d4d4d4"/>
+          <text x="70" y="6" font-size="11" font-weight="600" fill="#d4d4d4">1 km</text>
+        </g>
+      </svg>
+
+      <!-- Map Legend -->
+      <section id="legendPanel" class="absolute left-4 top-4 z-10 rounded-xl border border-line bg-panel/80 shadow-lg backdrop-blur">
+        <button id="legendToggle" aria-expanded="false" aria-controls="legendBody" class="flex w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-ink/70 hover:text-white">
+          Legend <span id="legendChevron" class="inline-block transition-transform">▾</span>
+        </button>
+        <div id="legendBody" class="hidden max-h-[50vh] overflow-y-auto px-3.5 pb-3">
+          <ul id="legend" class="space-y-1 text-ink/80"></ul>
+        </div>
+      </section>
+
+      <!-- Zoom Toolbar -->
+      <div class="absolute right-4 top-4 z-10 flex flex-col divide-y divide-line overflow-hidden rounded-xl border border-line bg-panel/80 shadow-lg backdrop-blur">
+        <button id="zoomIn" class="grid size-9 cursor-pointer place-items-center text-base font-semibold text-white hover:bg-hover" aria-label="Zoom in">+</button>
+        <button id="zoomOut" class="grid size-9 cursor-pointer place-items-center text-base font-semibold text-white hover:bg-hover" aria-label="Zoom out">−</button>
+        <button id="zoomReset" class="grid size-9 cursor-pointer place-items-center text-[11px] font-semibold text-ink/80 hover:bg-hover hover:text-white" aria-label="Reset view">Fit</button>
+      </div>
+
+      <!-- Add Spot Banner -->
+      <div id="addBanner" class="absolute left-1/2 top-4 z-10 hidden -translate-x-1/2 items-center gap-3 rounded-full bg-mangrove py-2 pl-5 pr-2 text-white shadow-lg">
+        <span class="text-xs font-medium">Click the map to place a new spot</span>
+        <button id="cancelAdd" class="cursor-pointer rounded-full bg-white/20 px-3 py-1 text-xs font-semibold hover:bg-white/30">Cancel</button>
+      </div>
+
+      <!-- Coordinates Pill -->
+      <p id="coords" class="absolute bottom-4 right-4 rounded-full border border-line bg-panel/80 px-3 py-1 font-mono text-[10px] text-ink/70 backdrop-blur">Drag map to pan. Simulated coordinates.</p>
+    </div>
+
+    <!-- Right Sidebar: collapsible, with Places and Details tabs -->
+    <aside id="rightPanel" class="flex flex-col border-t border-line bg-panel lg:w-96 lg:shrink-0 lg:border-l lg:border-t-0">
+      <div class="flex items-center gap-2 border-b border-line p-2">
+        <div id="panelTabs" role="tablist" class="flex flex-1 gap-1 rounded-lg bg-surface p-1">
+          <button id="panelTabPlaces" role="tab" data-panel-tab="places" aria-selected="true" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-ink/60 transition-colors hover:text-white aria-selected:bg-line aria-selected:text-white aria-selected:shadow-sm">Places</button>
+          <button role="tab" data-panel-tab="detail" aria-selected="false" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-ink/60 transition-colors hover:text-white aria-selected:bg-line aria-selected:text-white aria-selected:shadow-sm">Details</button>
+        </div>
+        <button id="panelToggle" aria-expanded="true" aria-controls="panelBody" aria-label="Collapse sidebar" class="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-base font-bold text-ink/70 hover:bg-surface hover:text-white">»</button>
+      </div>
+
+      <div id="panelBody" class="min-h-0 flex-1">
+        <div id="panelScroll" class="h-full p-4 lg:overflow-y-auto">
+          <div id="tab-places"><div id="places" class="space-y-6"></div></div>
+          <div id="tab-detail" class="hidden">
+            <section id="detail" aria-live="polite">
+              <div class="rounded-xl border border-dashed border-line p-6 text-center">
+                <p class="text-xs leading-relaxed text-ink/60">Select a marker on the map or choose a place from the list to see its suitability, validation status, and accessibility.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Dialog: Import GIS Data (simulation only) -->
+  <dialog id="importDialog" class="m-auto w-[min(92vw,30rem)] rounded-2xl border border-line bg-panel p-6 text-ink shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm">
+    <h2 class="mb-2 font-display text-lg font-bold text-white">Import data</h2>
+    <p class="mb-4 text-xs leading-relaxed text-ink/70">Workflow: QGIS → Export GIS/WebGIS-ready data → Import into WebGIS → Display data. This step is done by the data manager, not by public users.</p>
+    <input id="importFile" type="file" accept=".json,.geojson,.csv" class="block w-full text-xs text-ink/80 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-surface file:px-3 file:py-2 file:font-semibold file:text-ink hover:file:bg-hover">
+    <p id="importStatus" class="mt-3 hidden rounded-lg bg-surface p-2.5 text-xs" aria-live="polite"></p>
+    <p class="mt-3 text-[11px] text-ink/50">Simulation only: the file is not read, parsed, or stored. The map keeps showing the built-in simulated data.</p>
+    <div class="mt-5 flex justify-end">
+      <button class="close-dialog cursor-pointer rounded-lg px-3.5 py-2 text-sm font-medium text-ink/80 transition-colors hover:bg-surface hover:text-white">Close</button>
+    </div>
+  </dialog>
+
+  <!-- Dialog: Add Spot -->
+  <dialog id="spotDialog" class="m-auto w-[min(92vw,28rem)] rounded-2xl border border-line bg-panel p-6 text-ink shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm">
+    <h2 class="font-display text-lg font-bold text-white">Add tourism spot</h2>
+    <p id="spotCoords" class="mb-4 mt-1 font-mono text-xs text-accent-light"></p>
+    <form id="spotForm" class="space-y-3 text-xs">
+      <label class="block">
+        <span class="mb-1 block font-medium text-ink/70">Spot name</span>
+        <input name="name" required maxlength="40" placeholder="e.g. Coastal Mangrove Trail" class="w-full rounded-lg bg-surface px-3 py-2 text-ink ring-1 ring-line placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-mangrove">
+      </label>
+      <label class="block">
+        <span class="mb-1 block font-medium text-ink/70">Type</span>
+        <select name="type" id="spotType" class="w-full rounded-lg bg-surface px-3 py-2 text-ink ring-1 ring-line placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-mangrove cursor-pointer"></select>
+      </label>
+      <div>
+        <span class="mb-1 block font-medium text-ink/70">Barangay (from map location)</span>
+        <p id="spotBrgy" class="w-full rounded-lg bg-surface px-3 py-2 text-ink ring-1 ring-line"></p>
+      </div>
+      <label class="block">
+        <span class="mb-1 block font-medium text-ink/70">Description</span>
+        <textarea name="text" rows="3" maxlength="200" placeholder="Provide details about the spot..." class="w-full rounded-lg bg-surface px-3 py-2 text-ink ring-1 ring-line placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-mangrove resize-none"></textarea>
+      </label>
+      <p class="rounded-lg bg-surface/60 p-2.5 text-[11px] text-ink/50">Submitted spots are added to this mock map as Pending Review and are not saved. In the production system, approved submissions could be incorporated during a future GIS data update/export cycle.</p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" class="close-dialog cursor-pointer rounded-lg px-3.5 py-2 text-sm font-medium text-ink/80 transition-colors hover:bg-surface hover:text-white">Cancel</button>
+        <button type="submit" class="cursor-pointer rounded-lg bg-mangrove px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-mangrove/25 transition-colors hover:bg-accent-light">Submit spot</button>
+      </div>
+    </form>
+  </dialog>
+
+  <p id="toast" role="status" class="fixed bottom-16 left-1/2 z-50 hidden -translate-x-1/2 rounded-full border border-line bg-panel px-5 py-2.5 text-sm text-white shadow-xl"></p>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

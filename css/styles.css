@@ -1,0 +1,7 @@
+:focus-visible { outline: 2px solid #3794ff; outline-offset: 2px; }
+
+/* Slim scrollbars (no Tailwind utility for these) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3e3e42; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #4e4e52; }
