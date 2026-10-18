@@ -159,9 +159,10 @@ function paintCells(mode) {
 
 // Map
 let drag = null;      // set while the pointer is down on the map
-let isAddingSpot = false;
-let newSpotPoint = null;
-let newSpotBrgy = null;
+// Add Spot state (feature commented out for the static mockup)
+// let isAddingSpot = false;
+// let newSpotPoint = null;
+// let newSpotBrgy = null;
 
 roads.forEach(road => {
   byId('layer-roads').appendChild(createSvgElement('polyline', {
@@ -195,8 +196,7 @@ function addMarker(place) {
   group.appendChild(createMapLabel(place.name, 22, 12));
 
   group.addEventListener('click', () => {
-    const wasDragged = drag && drag.moved;
-    if (isAddingSpot || wasDragged) return;
+    if (drag && drag.moved) return;
     showPlace(place);
   });
   group.addEventListener('keydown', event => {
@@ -236,7 +236,7 @@ const overviewViews = [
     text: 'Integrated view: final suitability analysis, constraints, transportation infrastructure, attractions, and potential sites.' },
   { id: 'spots', tab: 'spots', label: 'Existing Tourism Spots', mode: null, lists: ['attraction'],
     layers: ['attractions', 'barangays'],
-    text: 'Mapped attractions by type. Use Add spot to suggest a new one.' },
+    text: 'Mapped attractions by type.' },
   { id: 'eco', tab: 'eco', label: 'Ecotourism Suitability', mode: 'total', lists: ['candidate'],
     layers: ['suitability', 'constraints', 'candidates'],
     text: 'Final suitability from weighted spatial criteria with sensitive environmental zones excluded.' },
@@ -721,8 +721,8 @@ window.addEventListener('pointermove', event => {
 // Clear the drag after the click event fires, so a drag is not mistaken for a click
 window.addEventListener('pointerup', () => setTimeout(() => { drag = null; }, 0));
 
-// Add Spot
-
+// Add Spot (commented out for the static mockup; the Add spot button is disabled in index.html)
+/*
 function setAddingSpot(on) {
   isAddingSpot = on;
   byId('addBanner').classList.toggle('hidden', !on);
@@ -792,19 +792,21 @@ byId('spotForm').addEventListener('submit', event => {
   showPlace(spot);
   showToast('Spot added to the mock map as Pending Review.');
 });
+*/
 
 // Dialogs
-byId('importBtn').addEventListener('click', () => {
-  byId('importFile').value = '';
-  byId('importStatus').classList.add('hidden');
-  byId('importDialog').showModal();
-});
-byId('importFile').addEventListener('change', () => {
-  const files = byId('importFile').files;
-  if (!files.length) return;
-  byId('importStatus').textContent = 'GIS data imported successfully (simulation): ' + files[0].name;
-  byId('importStatus').classList.remove('hidden');
-});
+// Import data (commented out for the static mockup; the Import data button is disabled in index.html)
+// byId('importBtn').addEventListener('click', () => {
+//   byId('importFile').value = '';
+//   byId('importStatus').classList.add('hidden');
+//   byId('importDialog').showModal();
+// });
+// byId('importFile').addEventListener('change', () => {
+//   const files = byId('importFile').files;
+//   if (!files.length) return;
+//   byId('importStatus').textContent = 'GIS data imported successfully (simulation): ' + files[0].name;
+//   byId('importStatus').classList.remove('hidden');
+// });
 document.querySelectorAll('.close-dialog').forEach(button => {
   button.addEventListener('click', () => button.closest('dialog').close());
 });
